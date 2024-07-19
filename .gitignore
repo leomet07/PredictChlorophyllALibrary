@@ -1,0 +1,6 @@
+.DS_Store
+*.tif
+*.png
+*.jpg
+__pycache__
+exporting-rasters-07-17
