@@ -1,8 +1,11 @@
 import ee
+
 import geemap
-import folium
+
+# import folium
 import os
-import geehydro
+
+# import geehydro
 import pandas as pd
 import io
 import requests
@@ -32,16 +35,22 @@ Import assets from gee depending on which lake you want an image of
 """
 
 
-def import_assets(lakeid: int) -> ee.FeatureCollection:
-    LakeShp = ee.FeatureCollection("projects/nasa2024/assets/allNY_lakes_4ha")
+def import_assets(lakeid: int, projectName: str) -> ee.FeatureCollection:
+    LakeShp = ee.FeatureCollection(f"projects/{projectName}/assets/allNY_lakes4326")
     print(f"size of dataset", LakeShp.size().getInfo())
     print(lakeid)
     LakeShp = ee.FeatureCollection(LakeShp.filter(ee.Filter.eq("lagoslakei", lakeid)))
     print(f"size of our lake shapefile", LakeShp.size().getInfo())
+    # NewLakeShp = LakeShp.map(mapLakeFeature)
     return LakeShp
 
 
-"""
+def mapLakeFeature(feature: ee.Feature):
+    # print("Feature: ", feature)
+    return feature.transform("EPSG:4326")
+
+
+""""
 MAIN Atmospheric Correction
 Page, B.P., Olmanson, L.G. and Mishra, D.R., 2019. A harmonized image processing workflow using Sentinel-2/MSI and Landsat-8/OLI for mapping water clarity in optically variable lake systems. Remote Sensing of Environment, 231, p.111284.
 https://github.com/Nateme16/geo-aquawatch-water-quality/blob/main/Atmospheric%20corrections/main_L8L9.ipynb
@@ -934,7 +943,7 @@ def get_raster(start_date, end_date, LakeShp) -> ee.Image:
     print(range.getInfo())
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
     print(f"Masked Coll size: ", masked_coll.size().getInfo())
-    test, date = import_collections(masked_coll, range, LakeShp)
+    image, date = import_collections(masked_coll, range, LakeShp)
     return image, date
 
 
@@ -981,7 +990,7 @@ def export_raster_main(
     open_gee_project(project=project)
     # get shape of lake
     print(lakeid)
-    LakeShp = import_assets(lakeid=lakeid)
+    LakeShp = import_assets(lakeid, project)
     print(LakeShp.geometry().length().getInfo())
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
@@ -998,8 +1007,29 @@ def export_raster_main(
         width = dimensions[0]
         height = dimensions[1]
 
-    # image = image.clipToBoundsAndScale(geometry=LakeShp.geometry(), width=width, height=height)
+    print("Lakeshp", LakeShp.first().geometry().projection().getInfo())
+    # lakeshp_transform = LakeShp.first().geometry().projection().getInfo()["transform"]
+    # lakeshp_transform = [0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]
+    # lakeshp_transform = [60.0, 0.0, 499980.0, 0.0, -60.0, 4600020.0]
+    # print("Lakeshp transform: ", lakeshp_transform)
 
+    # 32618
+    # 4326
+    # casted_lakeshp_geometry
+    image = image.reproject("EPSG:4326")
+    print("Image", image.getInfo())
+    # image = image.reproject("EPSG:32618", lakeshp_transform)
+    # print("BEFORE Image.getInfo", image.getInfo())
+
+    # image = image.clipToBoundsAndScale(
+    #     geometry=LakeShp.geometry(), width=width, height=height
+    # )
+    # image = image.clip(LakeShp)
+    # print("\n\nFinished clip to bounds and scale \n\n")
+
+    # image = image.reproject(
+    #     "EPSG:4326", [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+    # )
     # task = ee.batch.Export.image.toDrive(image=image.clip(LakeShp),
     #                                 fileFormat='GeoTIFF',
     #                                 description=out_filename,
@@ -1010,15 +1040,29 @@ def export_raster_main(
 
     # print(task.status())
 
-    image = image.reproject(crs="EPSG:4326", scale=30)
+    # image = image.clip(LakeShp.geometry())
+
+    # print("AFTER Image.getInfo", image.getInfo())
 
     # get download URL
-    url = image.getDownloadURL({"dimensions": dimensions, "format": "GEO_TIFF"})
+    url = image.getDownloadURL(
+        {
+            "format": "GEO_TIFF",
+            "scale": 30,
+            "region": LakeShp.geometry(),
+            "filePerBand": False,
+            "bands": image.getInfo()["bands"],
+            # "crs": "EPSG:4326",
+            # "crs_transform": "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0]",
+            # "crs_transform": "[0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]",
+            # "crs_transform": [0.0, 0.0, 588975.2271286135, 0.0, 0.0, 4555156.146609113],
+        }
+    )
+    print("URL IN EE: ", url)
 
     # export!
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-    out_file = os.path.join(out_dir, out_filename)
+
+    out_file = out_filename
     # download image, and then view metadata with rasterio
     response = requests.get(url)
     with open(out_file, "wb") as f:
@@ -1026,6 +1070,40 @@ def export_raster_main(
     with rasterio.open(out_file) as dataset:
         pprint(dataset.profile)
     print(f"Image saved to {out_file}")
+
+    # geemap.ee_export_image(
+    #     image,
+    #     filename=out_filename,
+    #     scale=30,
+    #     region=LakeShp.geometry(),
+    #     file_per_band=False,
+    # )
+
+    # Open the GeoTIFF file
+    with rasterio.open(out_file) as src:
+        # Read the number of bands and the dimensions
+        num_bands = src.count
+        height = src.height
+        width = src.width
+        print(src.profile)
+
+        print(f"Number of bands: {num_bands}")
+        print(f"Dimensions: {width} x {height}")
+
+        # Read the entire image into a numpy array (bands, height, width)
+        img = src.read()
+        print("hi2")
+        # Display each band separately
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
+
+        for i, ax in enumerate(axes.flatten()):
+            if i < num_bands:
+                ax.imshow(img[i, :, :], cmap="gray")  # Display each band separately
+                ax.set_title(f"Band {i+1}")
+                ax.axis("off")
+
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
