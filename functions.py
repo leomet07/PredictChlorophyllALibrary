@@ -904,24 +904,26 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
 
     Rrs_S2B = Rrs_S2B.select(["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A"])
 
+    Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
+
     print("Number of S2A images:", Rrs_S2A.size().getInfo())
     print("Number of S2B images:", Rrs_S2B.size().getInfo())
 
-    finger_lakes = Rrs_S2A.first()
-    first_image_date_S2B = (
+    finger_lakes = Rrs_S2_merged.first()
+    first_image_date_S2_merged = (
         ee.Date(finger_lakes.get("system:time_start")).format("YYYY-MM-dd").getInfo()
     )
 
     # add in s2b
 
-    print("Date of the first image in FC_S2B:", first_image_date_S2B)
+    print("Date of the first image in FC_S2 (merged S2A and S2B):", first_image_date_S2_merged)
 
     finger_lakes = finger_lakes.clip(LakeShp)
 
     finger_lakes.getInfo()
 
     test = finger_lakes.toFloat()
-    return test, first_image_date_S2B
+    return test, first_image_date_S2_merged
 
 
 """
@@ -933,11 +935,10 @@ ex. start_date = '2020-07-01'
 
 def get_raster(start_date, end_date, LakeShp) -> ee.Image:
     date_range = ee.Filter.date(start_date, end_date)
-    range = ee.Filter.Or(date_range)
-    print(range.getInfo())
+    filter_range = ee.Filter.Or(date_range)
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
     print(f"Masked Coll size: ", masked_coll.size().getInfo())
-    image, date = import_collections(masked_coll, range, LakeShp)
+    image, date = import_collections(masked_coll, filter_range, LakeShp)
     return image, date
 
 
@@ -987,64 +988,11 @@ def export_raster_main(
     # open gee project
     open_gee_project(project=project)
     # get shape of lake
-    print(lakeid)
+    print("LakeID: ", lakeid)
     LakeShp = import_assets(lakeid, project)
-    # lon_min, lat_min = -73.9564, 41.1351
-    # lon_max, lat_max = -73.9228, 41.1489
-
-    # # Create the rectangle geometry
-    # rectangle_geom = ee.Geometry.Rectangle([lon_min, lat_min, lon_max, lat_max])
-
-    # LakeShp = rectangle_geom
-
-    # print(LakeShp.getInfo())
+    
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
-    # get image dimensions
-    info = image.getInfo()
-    bands = info["bands"]
-    width = -1
-    height = -1
-    for band in bands:
-        dimensions = band["dimensions"]
-        print(
-            f"Band: {band['id']}, Width: {dimensions[0]} pixels, Height: {dimensions[1]} pixels"
-        )
-        width = dimensions[0]
-        height = dimensions[1]
-
-    # image = image.reproject("EPSG:4326")
-    print("Image", image.getInfo())
-    
-    # image = image.clip(LakeShp)
-    # image = image.clipToBoundsAndScale(
-    #     geometry=LakeShp.geometry(), width=width, height=height
-    # )
-    # image = image.clip(LakeShp.geometry())
-    # print("\n\nFinished clip to bounds and scale \n\n")
-
-    '''
-    print("Right before fstarting task: ")
-
-    task = ee.batch.Export.image.toDrive(image=image.clip(LakeShp),
-                                        fileFormat='GeoTIFF',
-                                        description='test_518pm',
-                                        folder='Export_Rasters_0723',
-                                        maxPixels=1e13)
-
-    task.start()
-
-    while task.active():
-        print("Still running")
-        time.sleep(10)
-
-    print("Finished")
-    '''
-    
-    print("LakeShp Geometry:", LakeShp.geometry().getInfo())
-
-    
-    # print("Rectangle Geometry:", rectangle_geom.getInfo())
 
     # get download URL
     url = image.getDownloadURL(
@@ -1055,17 +1003,14 @@ def export_raster_main(
             "filePerBand": False,
         }
     )
-    print("URL IN EE: ", url)
 
     # export!
-
     out_file = out_filename
     # download image, and then view metadata with rasterio
     response = requests.get(url)
     with open(out_file, "wb") as f:
         f.write(response.content)
-    with rasterio.open(out_file) as dataset:
-        pprint(dataset.profile)
+
     print(f"Image saved to {out_file}")
 
     # Open the GeoTIFF file
@@ -1074,14 +1019,12 @@ def export_raster_main(
         num_bands = src.count
         height = src.height
         width = src.width
-        print(src.profile)
 
         print(f"Number of bands: {num_bands}")
         print(f"Dimensions: {width} x {height}")
 
         # Read the entire image into a numpy array (bands, height, width)
         img = src.read()
-        print("hi2")
         # Display each band separately
         fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
 
