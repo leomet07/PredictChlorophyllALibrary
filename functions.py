@@ -52,7 +52,7 @@ https://github.com/Nateme16/geo-aquawatch-water-quality/blob/main/Atmospheric%20
 
 
 def MAIN_S2A(img):
-    JRC = ee.Image("JRC/GSW1_1/GlobalSurfaceWater")
+    JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     mask = JRC.select("occurrence").gt(0)
     pi = ee.Image(3.141592)
     # msi bands
@@ -358,7 +358,7 @@ Same thing for but Sentinel 2B
 
 
 def MAIN_S2B(img):
-    JRC = ee.Image("JRC/GSW1_1/GlobalSurfaceWater")
+    JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     mask = JRC.select("occurrence").gt(0)
     pi = ee.Image(3.141592)
     # msi bands
@@ -826,7 +826,7 @@ def get_masked_coll(LakeShp, start_date, end_date):
 
 # jrc water occurrence mask
 def jrcMask(image):
-    jrc = ee.Image("JRC/GSW1_0/GlobalSurfaceWater")
+    jrc = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     # select only water occurence
     occurrence = jrc.select("occurrence")
     # selectonly water occurences of greater than 75%
@@ -870,7 +870,7 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
     # MSI = ee.ImageCollection('COPERNICUS/S2_HARMONIZED')
     ozone = ee.ImageCollection("TOMS/MERGED")
 
-    JRC = ee.Image("JRC/GSW1_1/GlobalSurfaceWater")
+    JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     # Process
     mask = JRC.select("occurrence").gt(0)
 
