@@ -4,7 +4,6 @@ import pandas as pd
 import sys
 
 if __name__ == "__main__":
-    print(sys.argv)
     if len(sys.argv) != 9:
         print(
             "python multiple_dates.py <out_dir> <project> <lakeid> <start_date> <end_date> <scale> <frequency> <out_filename>"
@@ -38,3 +37,4 @@ if __name__ == "__main__":
             print(e)
 
     print(successful_filenames)
+    print(f"{len(successful_filenames)} successful images found out of {len(date_range)} subintervals")
