@@ -8,3 +8,5 @@ exporting-rasters-07-17
 venv/
 
 *.sh
+
+out/

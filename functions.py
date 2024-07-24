@@ -1,11 +1,5 @@
 import ee
-
-import geemap
-
-# import folium
 import os
-
-# import geehydro
 import pandas as pd
 import io
 import requests
