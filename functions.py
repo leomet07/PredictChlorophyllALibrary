@@ -31,10 +31,10 @@ Import assets from gee depending on which lake you want an image of
 
 def import_assets(lakeid: int, projectName: str) -> ee.FeatureCollection:
     LakeShp = ee.FeatureCollection(f"users/greeneji/LAGOS_NE_All_Lakes_4ha")
-    print(f"size of dataset", LakeShp.size().getInfo())
-    print(lakeid)
+    # print(f"size of dataset", LakeShp.size().getInfo())
+    # print(lakeid)
     LakeShp = ee.FeatureCollection(LakeShp.filter(ee.Filter.eq("lagoslakei", lakeid)))
-    print(f"size of our lake shapefile", LakeShp.size().getInfo())
+    # print(f"size of our lake shapefile", LakeShp.size().getInfo())
     # NewLakeShp = LakeShp.map(mapLakeFeature)
     return LakeShp
 
@@ -707,7 +707,7 @@ def get_s2_sr_cld_col(start_date, end_date, LakeShp) -> ee.ImageCollection:
     )
 
     s2_sr_cld_col_eval = ee.ImageCollection.combine(s2_sr_cld_col_eval, s2_sr_col)
-    print(f"s2_sr_cld_col_eval size: ", s2_sr_cld_col_eval.size().getInfo())
+    # print(f"s2_sr_cld_col_eval size: ", s2_sr_cld_col_eval.size().getInfo())
 
     s2_sr_cld_col_eval = s2_sr_cld_col_eval.select(
         "B1",
@@ -937,7 +937,7 @@ def get_raster(start_date, end_date, LakeShp) -> ee.Image:
     date_range = ee.Filter.date(start_date, end_date)
     filter_range = ee.Filter.Or(date_range)
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
-    print(f"Masked Coll size: ", masked_coll.size().getInfo())
+    # print(f"Masked Coll size: ", masked_coll.size().getInfo())
     image, date = import_collections(masked_coll, filter_range, LakeShp)
     return image, date
 
@@ -977,51 +977,16 @@ def get_height(image) -> int:
     height = int(bands[-1]["dimensions"][1])
     return height
 
-
-
-
-import time
-
-def export_raster_main(
-    out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date
-):
-    # open gee project
-    open_gee_project(project=project)
-    # get shape of lake
-    print("LakeID: ", lakeid)
-    LakeShp = import_assets(lakeid, project)
-    
-    # get raster of lake, inspect to make sure you have 9 bands
-    image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
-
-    # get download URL
-    url = image.getDownloadURL(
-        {
-            "format": "GEO_TIFF",
-            "scale": 15, 
-            "region": LakeShp.geometry(),
-            "filePerBand": False,
-        }
-    )
-
-    # export!
-    out_file = out_filename
-    # download image, and then view metadata with rasterio
-    response = requests.get(url)
-    with open(out_file, "wb") as f:
-        f.write(response.content)
-
-    print(f"Image saved to {out_file}")
-
+def visualize(tif_path : str):
     # Open the GeoTIFF file
-    with rasterio.open(out_file) as src:
+    with rasterio.open(tif_path) as src:
         # Read the number of bands and the dimensions
         num_bands = src.count
         height = src.height
         width = src.width
 
         print(f"Number of bands: {num_bands}")
-        print(f"Dimensions: {width} x {height}")
+        # print(f"Dimensions: {width} x {height}")
 
         # Read the entire image into a numpy array (bands, height, width)
         img = src.read()
@@ -1036,8 +1001,46 @@ def export_raster_main(
 
         plt.tight_layout()
         plt.show()
-        
 
+
+def export_raster_main(
+    out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date
+):
+    open_gee_project(project=project)    
+    
+    print("LakeID: ", lakeid)
+    LakeShp = import_assets(lakeid, project) # get shape of lake
+    
+    # get raster of lake, inspect to make sure you have 9 bands
+    image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
+    
+    print("Getting download url...")
+    # get download URL
+    url = image.getDownloadURL(
+        {
+            "format": "GEO_TIFF",
+            "scale": 15, 
+            "region": LakeShp.geometry(),
+            "filePerBand": False,
+        }
+    )
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    # export!
+    out_filepath = os.path.join(out_dir, out_filename)
+    # download image, and then view metadata with rasterio
+    print("Downloading raster...")
+
+    response = requests.get(url)
+    with open(out_filepath, "wb") as f:
+        f.write(response.content)
+
+    print(f"Image saved to {out_filepath}")
+
+    visualize(out_filepath)
+        
 
 if __name__ == "__main__":
     if len(sys.argv) != 7:
