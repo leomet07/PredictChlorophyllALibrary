@@ -1004,7 +1004,7 @@ def visualize(tif_path : str):
 
 
 def export_raster_main(
-    out_dir: str, out_filename: str, project: str, lakeid: int, start_date : str, end_date: str, shouldVisualize : bool = False
+    out_dir: str, out_filename: str, project: str, lakeid: int, start_date : str, end_date: str, scale : int, shouldVisualize : bool = False
 ):
     open_gee_project(project=project)    
     
@@ -1019,7 +1019,7 @@ def export_raster_main(
     url = image.getDownloadURL(
         {
             "format": "GEO_TIFF",
-            "scale": 15, 
+            "scale": scale, #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
             "region": LakeShp.geometry(),
             "filePerBand": False,
         }
@@ -1044,18 +1044,19 @@ def export_raster_main(
         
 
 if __name__ == "__main__":
-    if len(sys.argv) != 7:
+    if len(sys.argv) != 8:
         print(
-            "python export_raster.py <out_dir> <project> <lakeid> <start_date> <end_date> <out_filename>"
+            "python export_raster.py <out_dir> <project> <lakeid> <start_date> <end_date> <scale> <out_filename>"
         )
         sys.exit(1)
 
     out_dir = sys.argv[1]
-    out_filename = sys.argv[6]
     project = sys.argv[2]
     lakeid = int(sys.argv[3])
     start_date = sys.argv[4] # STR, in format YYYY-MM-DD
     end_date = sys.argv[5] # STR, in format YYYY-MM-DD
+    scale = int(sys.argv[6])
+    out_filename = sys.argv[7]
 
     export_raster_main(
         out_dir=out_dir,
@@ -1064,5 +1065,6 @@ if __name__ == "__main__":
         lakeid=lakeid,
         start_date=start_date,
         end_date=end_date,
+        scale = scale,
         shouldVisualize=True
     )
