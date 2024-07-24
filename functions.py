@@ -1019,19 +1019,9 @@ def export_raster_main(
         width = dimensions[0]
         height = dimensions[1]
 
-    # print("Lakeshp", LakeShp.first().geometry().projection().getInfo())
-    # lakeshp_transform = LakeShp.first().geometry().projection().getInfo()["transform"]
-    # lakeshp_transform = [0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]
-    # lakeshp_transform = [60.0, 0.0, 499980.0, 0.0, -60.0, 4600020.0]
-    # print("Lakeshp transform: ", lakeshp_transform)
-
-    # 32618
-    # 4326
-    # casted_lakeshp_geometry
     image = image.reproject("EPSG:4326")
     print("Image", image.getInfo())
-    # image = image.reproject("EPSG:32618", lakeshp_transform)
-    # print("BEFORE Image.getInfo", image.getInfo())
+    
     image = image.clip(LakeShp)
     # image = image.clipToBoundsAndScale(
     #     geometry=LakeShp.geometry(), width=width, height=height
@@ -1039,23 +1029,8 @@ def export_raster_main(
     # image = image.clip(LakeShp.geometry())
     # print("\n\nFinished clip to bounds and scale \n\n")
 
-    # image = image.reproject(
-    #     "EPSG:4326", [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-    # )
-    # task = ee.batch.Export.image.toDrive(image=image.clip(LakeShp),
-    #                                 fileFormat='GeoTIFF',
-    #                                 description=out_filename,
-    #                                 folder='test_0719',
-    #                                 maxPixels=1e13)
-
-    # task.start()
-
-    # print(task.status())
-
-    # image = image.clip(LakeShp.geometry())
-
-    # print("AFTER Image.getInfo", image.getInfo())
-    print("Right before starting task: ")
+    '''
+    print("Right before fstarting task: ")
 
     task = ee.batch.Export.image.toDrive(image=image.clip(LakeShp),
                                         fileFormat='GeoTIFF',
@@ -1071,6 +1046,7 @@ def export_raster_main(
 
     print("Finished")
     '''
+    
     print("LakeShp Geometry:", LakeShp.geometry().getInfo())
 
     
@@ -1080,17 +1056,9 @@ def export_raster_main(
     url = image.getDownloadURL(
         {
             "format": "GEO_TIFF",
-            # "scale": 30,
+            "scale": 15,
             "region": LakeShp.geometry(),
             "filePerBand": False,
-    #         'scale': 10,
-    # 'region': rectangle_geom,
-    # 'crs': 'EPSG:4326'
-            # "bands": image.getInfo()["bands"],
-            # "crs": "EPSG:4326",
-            # "crs_transform": "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0]",
-            # "crs_transform": "[0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]",
-            # "crs_transform": [0.0, 0.0, 588975.2271286135, 0.0, 0.0, 4555156.146609113],
         }
     )
     print("URL IN EE: ", url)
@@ -1105,14 +1073,6 @@ def export_raster_main(
     with rasterio.open(out_file) as dataset:
         pprint(dataset.profile)
     print(f"Image saved to {out_file}")
-
-    # geemap.ee_export_image(
-    #     image,
-    #     filename=out_filename,
-    #     scale=30,
-    #     region=LakeShp.geometry(),
-    #     file_per_band=False,
-    # )
 
     # Open the GeoTIFF file
     with rasterio.open(out_file) as src:
@@ -1139,7 +1099,7 @@ def export_raster_main(
 
         plt.tight_layout()
         plt.show()
-        '''
+        
 
 
 if __name__ == "__main__":
