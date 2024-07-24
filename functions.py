@@ -36,7 +36,7 @@ Import assets from gee depending on which lake you want an image of
 
 
 def import_assets(lakeid: int, projectName: str) -> ee.FeatureCollection:
-    LakeShp = ee.FeatureCollection(f"projects/{projectName}/assets/allNY_lakes4326")
+    LakeShp = ee.FeatureCollection(f"users/greeneji/LAGOS_NE_All_Lakes_4ha")
     print(f"size of dataset", LakeShp.size().getInfo())
     print(lakeid)
     LakeShp = ee.FeatureCollection(LakeShp.filter(ee.Filter.eq("lagoslakei", lakeid)))
@@ -983,6 +983,10 @@ def get_height(image) -> int:
     return height
 
 
+
+
+import time
+
 def export_raster_main(
     out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date
 ):
@@ -991,7 +995,15 @@ def export_raster_main(
     # get shape of lake
     print(lakeid)
     LakeShp = import_assets(lakeid, project)
-    print(LakeShp.geometry().length().getInfo())
+    # lon_min, lat_min = -73.9564, 41.1351
+    # lon_max, lat_max = -73.9228, 41.1489
+
+    # # Create the rectangle geometry
+    # rectangle_geom = ee.Geometry.Rectangle([lon_min, lat_min, lon_max, lat_max])
+
+    # LakeShp = rectangle_geom
+
+    # print(LakeShp.getInfo())
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
     # get image dimensions
@@ -1007,7 +1019,7 @@ def export_raster_main(
         width = dimensions[0]
         height = dimensions[1]
 
-    print("Lakeshp", LakeShp.first().geometry().projection().getInfo())
+    # print("Lakeshp", LakeShp.first().geometry().projection().getInfo())
     # lakeshp_transform = LakeShp.first().geometry().projection().getInfo()["transform"]
     # lakeshp_transform = [0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]
     # lakeshp_transform = [60.0, 0.0, 499980.0, 0.0, -60.0, 4600020.0]
@@ -1020,11 +1032,11 @@ def export_raster_main(
     print("Image", image.getInfo())
     # image = image.reproject("EPSG:32618", lakeshp_transform)
     # print("BEFORE Image.getInfo", image.getInfo())
-
+    image = image.clip(LakeShp)
     # image = image.clipToBoundsAndScale(
     #     geometry=LakeShp.geometry(), width=width, height=height
     # )
-    # image = image.clip(LakeShp)
+    # image = image.clip(LakeShp.geometry())
     # print("\n\nFinished clip to bounds and scale \n\n")
 
     # image = image.reproject(
@@ -1043,15 +1055,38 @@ def export_raster_main(
     # image = image.clip(LakeShp.geometry())
 
     # print("AFTER Image.getInfo", image.getInfo())
+    print("Right before starting task: ")
+
+    task = ee.batch.Export.image.toDrive(image=image.clip(LakeShp),
+                                        fileFormat='GeoTIFF',
+                                        description='test_518pm',
+                                        folder='Export_Rasters_0723',
+                                        maxPixels=1e13)
+
+    task.start()
+
+    while task.active():
+        print("Still running")
+        time.sleep(10)
+
+    print("Finished")
+    '''
+    print("LakeShp Geometry:", LakeShp.geometry().getInfo())
+
+    
+    # print("Rectangle Geometry:", rectangle_geom.getInfo())
 
     # get download URL
     url = image.getDownloadURL(
         {
             "format": "GEO_TIFF",
-            "scale": 30,
+            # "scale": 30,
             "region": LakeShp.geometry(),
             "filePerBand": False,
-            "bands": image.getInfo()["bands"],
+    #         'scale': 10,
+    # 'region': rectangle_geom,
+    # 'crs': 'EPSG:4326'
+            # "bands": image.getInfo()["bands"],
             # "crs": "EPSG:4326",
             # "crs_transform": "[1.0, 0.0, 0.0, 0.0, 1.0, 0.0]",
             # "crs_transform": "[0.0, 0.0, -73.93976577949199, 0.0, 0.0, 41.14284565814278]",
@@ -1104,6 +1139,7 @@ def export_raster_main(
 
         plt.tight_layout()
         plt.show()
+        '''
 
 
 if __name__ == "__main__":
