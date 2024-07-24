@@ -1004,7 +1004,7 @@ def visualize(tif_path : str):
 
 
 def export_raster_main(
-    out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date, shouldVisualize : bool = False
+    out_dir: str, out_filename: str, project: str, lakeid: int, start_date : str, end_date: str, shouldVisualize : bool = False
 ):
     open_gee_project(project=project)    
     
@@ -1054,8 +1054,8 @@ if __name__ == "__main__":
     out_filename = sys.argv[6]
     project = sys.argv[2]
     lakeid = int(sys.argv[3])
-    start_date = sys.argv[4]
-    end_date = sys.argv[5]
+    start_date = sys.argv[4] # STR, in format YYYY-MM-DD
+    end_date = sys.argv[5] # STR, in format YYYY-MM-DD
 
     export_raster_main(
         out_dir=out_dir,
