@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import rasterio
 
-out_file = "prospect_park.tif"
+out_file = input("Enter the path of a tif to inspect: ") or "out/prospect.tif"
 
 with rasterio.open(out_file) as src:
     # Read the number of bands and the dimensions
