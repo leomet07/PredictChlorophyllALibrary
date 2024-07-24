@@ -1004,7 +1004,7 @@ def visualize(tif_path : str):
 
 
 def export_raster_main(
-    out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date
+    out_dir: str, out_filename: str, project: str, lakeid: int, start_date, end_date, shouldVisualize : bool = False
 ):
     open_gee_project(project=project)    
     
@@ -1039,7 +1039,8 @@ def export_raster_main(
 
     print(f"Image saved to {out_filepath}")
 
-    visualize(out_filepath)
+    if shouldVisualize:
+        visualize(out_filepath)
         
 
 if __name__ == "__main__":
@@ -1063,4 +1064,5 @@ if __name__ == "__main__":
         lakeid=lakeid,
         start_date=start_date,
         end_date=end_date,
+        shouldVisualize=True
     )
