@@ -1019,10 +1019,10 @@ def export_raster_main(
         width = dimensions[0]
         height = dimensions[1]
 
-    image = image.reproject("EPSG:4326")
+    # image = image.reproject("EPSG:4326")
     print("Image", image.getInfo())
     
-    image = image.clip(LakeShp)
+    # image = image.clip(LakeShp)
     # image = image.clipToBoundsAndScale(
     #     geometry=LakeShp.geometry(), width=width, height=height
     # )
@@ -1056,7 +1056,7 @@ def export_raster_main(
     url = image.getDownloadURL(
         {
             "format": "GEO_TIFF",
-            "scale": 15,
+            "scale": 15, 
             "region": LakeShp.geometry(),
             "filePerBand": False,
         }
