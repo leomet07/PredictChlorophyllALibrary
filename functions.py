@@ -916,7 +916,10 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
 
     # add in s2b
 
-    print("Date of the first image in FC_S2 (merged S2A and S2B):", first_image_date_S2_merged)
+    print(
+        "Date of the first image in FC_S2 (merged S2A and S2B):",
+        first_image_date_S2_merged,
+    )
 
     finger_lakes = finger_lakes.clip(LakeShp)
 
@@ -977,7 +980,8 @@ def get_height(image) -> int:
     height = int(bands[-1]["dimensions"][1])
     return height
 
-def visualize(tif_path : str):
+
+def visualize(tif_path: str):
     # Open the GeoTIFF file
     with rasterio.open(tif_path) as src:
         # Read the number of bands and the dimensions
@@ -1004,22 +1008,29 @@ def visualize(tif_path : str):
 
 
 def export_raster_main(
-    out_dir: str, out_filename: str, project: str, lakeid: int, start_date : str, end_date: str, scale : int, shouldVisualize : bool = False
+    out_dir: str,
+    out_filename: str,
+    project: str,
+    lakeid: int,
+    start_date: str,
+    end_date: str,
+    scale: int,
+    shouldVisualize: bool = False,
 ):
-    open_gee_project(project=project)    
-    
+    open_gee_project(project=project)
+
     print("LakeID: ", lakeid)
-    LakeShp = import_assets(lakeid, project) # get shape of lake
-    
+    LakeShp = import_assets(lakeid, project)  # get shape of lake
+
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
-    
+
     print("Getting download url...")
     # get download URL
     url = image.getDownloadURL(
         {
             "format": "GEO_TIFF",
-            "scale": scale, #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
+            "scale": scale,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
             "region": LakeShp.geometry(),
             "filePerBand": False,
         }
@@ -1037,11 +1048,15 @@ def export_raster_main(
     with open(out_filepath, "wb") as f:
         f.write(response.content)
 
+    with rasterio.open(out_filepath, "r+") as dst:
+        new_metadata = {"date": date, "id": lakeid, "scale": scale}
+        dst.update_tags(**new_metadata)
+
     print(f"Image saved to {out_filepath}")
 
     if shouldVisualize:
         visualize(out_filepath)
-        
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 8:
@@ -1053,8 +1068,8 @@ if __name__ == "__main__":
     out_dir = sys.argv[1]
     project = sys.argv[2]
     lakeid = int(sys.argv[3])
-    start_date = sys.argv[4] # STR, in format YYYY-MM-DD
-    end_date = sys.argv[5] # STR, in format YYYY-MM-DD
+    start_date = sys.argv[4]  # STR, in format YYYY-MM-DD
+    end_date = sys.argv[5]  # STR, in format YYYY-MM-DD
     scale = int(sys.argv[6])
     out_filename = sys.argv[7]
 
@@ -1065,6 +1080,6 @@ if __name__ == "__main__":
         lakeid=lakeid,
         start_date=start_date,
         end_date=end_date,
-        scale = scale,
-        shouldVisualize=True
+        scale=scale,
+        shouldVisualize=True,
     )
