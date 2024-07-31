@@ -7,7 +7,8 @@ exporting-rasters-07-17
 time_series_all_lakes
 
 venv/
-
+*.csv
 *.sh
+*.html
 
 out/

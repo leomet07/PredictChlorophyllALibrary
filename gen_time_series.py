@@ -10,14 +10,9 @@ Add a legend
 from datetime import datetime as dt
 from datetime import timedelta
 import matplotlib.dates as mdates
-import seaborn as sns
 import pandas as pd
 import numpy as np
-from scipy import stats
-import seaborn as sns
-import geopandas as gpd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 import sys
 import os
 
@@ -86,7 +81,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 3:
         print(
-            "python export_raster.py <csv_path> <out_folder_name>"
+            "python gen_time_series.py <csv_path> <out_folder_name>"
         )
         sys.exit(1)
 
