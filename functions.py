@@ -18,10 +18,12 @@ Set up GEE account and get the name of your GEE project.
 
 def open_gee_project(project: str):
     try:
-        ee.Initialize()
+        ee.Initialize(opt_url="https://earthengine-highvolume.googleapis.com")
     except Exception as e:
         ee.Authenticate()
-        ee.Initialize(project=project)
+        ee.Initialize(
+            project=project, opt_url="https://earthengine-highvolume.googleapis.com"
+        )
 
 
 """
@@ -906,8 +908,8 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
 
     Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
 
-    print("Number of S2A images:", Rrs_S2A.size().getInfo())
-    print("Number of S2B images:", Rrs_S2B.size().getInfo())
+    # print("Number of S2A images:", Rrs_S2A.size().getInfo())
+    # print("Number of S2B images:", Rrs_S2B.size().getInfo())
 
     finger_lakes = Rrs_S2_merged.first()
     first_image_date_S2_merged = (
@@ -916,10 +918,10 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
 
     # add in s2b
 
-    print(
-        "Date of the first image in FC_S2 (merged S2A and S2B):",
-        first_image_date_S2_merged,
-    )
+    # print(
+    #     "Date of the first image in FC_S2 (merged S2A and S2B):",
+    #     first_image_date_S2_merged,
+    # )
 
     finger_lakes = finger_lakes.clip(LakeShp)
 
@@ -1017,15 +1019,15 @@ def export_raster_main(
     scale: int,
     shouldVisualize: bool = False,
 ):
-    open_gee_project(project=project)
 
-    print("LakeID: ", lakeid)
+    # print("LakeID: ", lakeid)
     LakeShp = import_assets(lakeid, project)  # get shape of lake
+    # print("Lakeshp fetched")
 
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
 
-    print("Getting download url...")
+    # print("Getting download url...")
     # get download URL
     url = image.getDownloadURL(
         {
@@ -1042,7 +1044,7 @@ def export_raster_main(
     # export!
     out_filepath = os.path.join(out_dir, out_filename)
     # download image, and then view metadata with rasterio
-    print("Downloading raster...")
+    # print("Downloading raster...")
 
     response = requests.get(url)
     with open(out_filepath, "wb") as f:
@@ -1052,7 +1054,7 @@ def export_raster_main(
         new_metadata = {"date": date, "id": lakeid, "scale": scale}
         dst.update_tags(**new_metadata)
 
-    print(f"Image saved to {out_filepath}")
+    # print(f"Image saved to {out_filepath}")
 
     if shouldVisualize:
         visualize(out_filepath)
@@ -1065,13 +1067,15 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    out_dir = sys.argv[1]
-    project = sys.argv[2]
+    project = sys.argv[1]
+    out_dir = sys.argv[2]
     lakeid = int(sys.argv[3])
     start_date = sys.argv[4]  # STR, in format YYYY-MM-DD
     end_date = sys.argv[5]  # STR, in format YYYY-MM-DD
     scale = int(sys.argv[6])
     out_filename = sys.argv[7]
+
+    open_gee_project(project=project)
 
     export_raster_main(
         out_dir=out_dir,

@@ -12,3 +12,7 @@ venv/
 *.html
 
 out/
+
+*.tar 
+
+*.csv

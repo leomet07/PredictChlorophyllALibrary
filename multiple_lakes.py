@@ -1,11 +1,11 @@
-from functions import export_raster_main
+from functions import export_raster_main, open_gee_project
 import pandas as pd
 import sys
 import ee
 
 
 def run_multiple_lakes(
-    out_dir, project, start_date_range, end_date_range, df_path, lagosid_path
+    out_dir, start_date_range, end_date_range, df_path, lagosid_path
 ):
     print(df_path, lagosid_path)
     # read csvs
@@ -42,7 +42,6 @@ def run_multiple_lakes(
                 export_raster_main(
                     out_dir,
                     filename,
-                    project,
                     lakeid,
                     start_date_range,
                     end_date_range,
@@ -75,13 +74,15 @@ def run_multiple_lakes(
 
 
 if __name__ == "__main__":
-    out_dir = sys.argv[1]
-    project = sys.argv[2]
+    project = sys.argv[1]
+    out_dir = sys.argv[2]
     start_date_range = sys.argv[3]  # STR, in format YYYY-MM-DD
     end_date_range = sys.argv[4]  # STR, in format YYYY-MM-DD
     tidy_df_path = sys.argv[5]
     lagosid_path = sys.argv[6]
     print(sys.argv)
+
+    open_gee_project(project=project)
 
     run_multiple_lakes(
         out_dir,
