@@ -39,7 +39,6 @@ def plot_observed_vs_predicted(df, lake, out_path):
 
     # format the x-axis to show month and year from earliest in-situ observations (2013)
     # and skip every 2nd month
-    plt.xlim(pd.to_datetime('2013-01-01'), pd.to_datetime('2022-12-31'))
     x_axis = plt.gca().xaxis
     x_axis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%b-%Y'))
     x_axis.set_major_locator(plt.matplotlib.dates.MonthLocator(interval=5))
@@ -70,7 +69,6 @@ def generate_time_series_all_lakes(csv_path, out_path):
         print(f"Saved %s successfully", lake)
 
 
-
 if __name__ == "__main__":
 
     # Arguments: 
@@ -79,7 +77,7 @@ if __name__ == "__main__":
     #                   doesn't need to exist, program will make a new one.
 
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print(
             "python gen_time_series.py <csv_path> <out_folder_name>"
         )
@@ -87,8 +85,11 @@ if __name__ == "__main__":
 
     csv_path = sys.argv[1]
     out_folder = sys.argv[2]
-    
+    lake = sys.argv[3]
+    """
     generate_time_series_all_lakes(
         csv_path,
         out_folder
     )
+    """
+    plot_observed_vs_predicted(pd.read_csv(csv_path), lake, out_folder)
