@@ -1035,6 +1035,7 @@ def export_raster_main(
             "scale": scale,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
             "region": LakeShp.geometry(),
             "filePerBand": False,
+            "crs": "EPSG:4326",
         }
     )
 
@@ -1067,8 +1068,8 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    project = sys.argv[1]
-    out_dir = sys.argv[2]
+    out_dir = sys.argv[1]
+    project = sys.argv[2]
     lakeid = int(sys.argv[3])
     start_date = sys.argv[4]  # STR, in format YYYY-MM-DD
     end_date = sys.argv[5]  # STR, in format YYYY-MM-DD
