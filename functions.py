@@ -669,23 +669,27 @@ that are >= 75% water (jrcMask), and a 30m buffer around roads to mask bridges (
 # import S2 collection & join s2cloudless, add SCL band from SR
 def get_s2_sr_cld_col(start_date, end_date, LakeShp) -> ee.ImageCollection:
     AOI = LakeShp
-    START_DATE = "2018-05-01"
-    END_DATE = "2023-08-30"
     CLOUD_FILTER = 50
     # Import and filter s2cloudless.
     s2_cloudless_col = (
-        ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")
+        ee.ImageCollection(
+            "COPERNICUS/S2_CLOUD_PROBABILITY"
+        )  # https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_CLOUD_PROBABILITY
         .filterBounds(AOI)
         .filterDate(start_date, end_date)
     )
+    # print("s2_cloudless_col size: ", s2_cloudless_col.size().getInfo())
 
     # Import and filter s2 raw images.
     s2_raw_col = (
-        ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+        ee.ImageCollection(
+            "COPERNICUS/S2_HARMONIZED"
+        )  # https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_HARMONIZED
         .filterBounds(AOI)
         .filterDate(start_date, end_date)
         .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", CLOUD_FILTER))
     )
+    # print("s2_raw_col size: ", s2_raw_col.size().getInfo())
 
     # Join the filtered s2cloudless collection to the S2 collection by the 'system:index' property.
     s2_sr_cld_col_eval = ee.ImageCollection(
@@ -700,16 +704,21 @@ def get_s2_sr_cld_col(start_date, end_date, LakeShp) -> ee.ImageCollection:
         )
     )
 
-    # add SCL band from SR
+    # add SCL (Scene Classification Map) band from SR
+    # Before 2019, no stuff from USA in here
     s2_sr_col = (
-        ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
+        ee.ImageCollection(
+            "COPERNICUS/S2_SR_HARMONIZED"
+        )  # https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED
         .filterBounds(AOI)
-        .filterDate(START_DATE, END_DATE)
+        .filterDate(start_date, end_date)
         .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", CLOUD_FILTER))
     )
 
+    # print("s2_sr_col size: ", s2_sr_col.size().getInfo())
+
     s2_sr_cld_col_eval = ee.ImageCollection.combine(s2_sr_cld_col_eval, s2_sr_col)
-    # print(f"s2_sr_cld_col_eval size: ", s2_sr_cld_col_eval.size().getInfo())
+    # print("s2_sr_cld_col_eval size: ", s2_sr_cld_col_eval.size().getInfo())
 
     s2_sr_cld_col_eval = s2_sr_cld_col_eval.select(
         "B1",
@@ -867,7 +876,7 @@ We call this in the get raster image function.
 """
 
 
-def import_collections(masked_coll, range, LakeShp) -> ee.Image:
+def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
     # Import Collections w/ Sentinel-2
     # MSI = ee.ImageCollection('COPERNICUS/S2_HARMONIZED')
     ozone = ee.ImageCollection("TOMS/MERGED")
@@ -877,7 +886,7 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
     mask = JRC.select("occurrence").gt(0)
 
     FC_S2A = (
-        masked_coll.filter(range)
+        masked_coll.filter(filter_range)
         .filterBounds(LakeShp)
         .filterMetadata("SPACECRAFT_NAME", "equals", "Sentinel-2A")
         .filterMetadata("CLOUDY_PIXEL_PERCENTAGE", "less_than", 30)
@@ -887,7 +896,7 @@ def import_collections(masked_coll, range, LakeShp) -> ee.Image:
     )
 
     FC_S2B = (
-        masked_coll.filter(range)
+        masked_coll.filter(filter_range)
         .filterBounds(LakeShp)
         .filterMetadata("SPACECRAFT_NAME", "equals", "Sentinel-2B")
         .filterMetadata("CLOUDY_PIXEL_PERCENTAGE", "less_than", 30)
@@ -942,7 +951,7 @@ def get_raster(start_date, end_date, LakeShp) -> ee.Image:
     date_range = ee.Filter.date(start_date, end_date)
     filter_range = ee.Filter.Or(date_range)
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
-    # print(f"Masked Coll size: ", masked_coll.size().getInfo())
+    # print("Masked Coll size: ", masked_coll.size().getInfo())  # if this is zero, nothing found
     image, date = import_collections(masked_coll, filter_range, LakeShp)
     return image, date
 
@@ -1051,13 +1060,14 @@ def export_raster_main(
     with open(out_filepath, "wb") as f:
         f.write(response.content)
 
+    new_metadata = {"date": date, "id": lakeid, "scale": scale}
     with rasterio.open(out_filepath, "r+") as dst:
-        new_metadata = {"date": date, "id": lakeid, "scale": scale}
         dst.update_tags(**new_metadata)
 
     # print(f"Image saved to {out_filepath}")
 
     if shouldVisualize:
+        print("Saved image metadata: ", new_metadata)
         visualize(out_filepath)
 
 
