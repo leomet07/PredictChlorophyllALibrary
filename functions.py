@@ -11,6 +11,9 @@ import datetime
 from pprint import pprint
 import matplotlib.pyplot as plt
 
+## GLOBAL CONSTANTS FOR THIS PROJECT
+CLOUD_FILTER = 50
+
 """
 Set up GEE account and get the name of your GEE project.
 """
@@ -669,7 +672,6 @@ that are >= 75% water (jrcMask), and a 30m buffer around roads to mask bridges (
 # import S2 collection & join s2cloudless, add SCL band from SR
 def get_s2_sr_cld_col(start_date, end_date, LakeShp) -> ee.ImageCollection:
     AOI = LakeShp
-    CLOUD_FILTER = 50
     # Import and filter s2cloudless.
     s2_cloudless_col = (
         ee.ImageCollection(
@@ -745,12 +747,11 @@ def get_s2_sr_cld_col(start_date, end_date, LakeShp) -> ee.ImageCollection:
 
 # add cloud bands
 def add_cloud_bands(img):
-    CLD_PRB_THRESH = 40
     # Get s2cloudless image, subset the probability band.
     cld_prb = ee.Image(img.get("s2cloudless")).select("probability")
 
     # Condition s2cloudless by the probability threshold value.
-    is_cloud = cld_prb.gt(CLD_PRB_THRESH).rename("clouds")
+    is_cloud = cld_prb.gt(CLOUD_FILTER).rename("clouds")
 
     # Add the cloud probability layer and cloud mask as image bands.
     return img.addBands(ee.Image([cld_prb, is_cloud]))
