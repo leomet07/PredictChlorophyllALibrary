@@ -35,7 +35,9 @@ Import assets from gee depending on which lake you want an image of
 
 
 def import_assets(lakeid: int, projectName: str) -> ee.FeatureCollection:
-    LakeShp = ee.FeatureCollection(f"users/greeneji/LAGOS_NE_All_Lakes_4ha")
+    LakeShp = ee.FeatureCollection(
+        f"projects/{projectName}/assets/LAGOS_NY_4ha_Polygons_v2"
+    )
     # print(f"size of dataset", LakeShp.size().getInfo())
     # print(lakeid)
     LakeShp = ee.FeatureCollection(LakeShp.filter(ee.Filter.eq("lagoslakei", lakeid)))
