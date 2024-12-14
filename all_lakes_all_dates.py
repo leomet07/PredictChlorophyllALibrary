@@ -15,32 +15,23 @@ def gen_all_lakes_all_dates_params(
     start_date_range,
     end_date_range,
     df_path,
-    lagosid_path,
     frequency: int,
 ):
-    print(df_path, lagosid_path)
+    print(df_path)
     # read csvs
     df = pd.read_csv(df_path)
+    df = df.fillna("")
 
-    lagosid = pd.read_csv(lagosid_path)
     print("CSV imported")
-
-    # select relevant columns from lagosid
-    lagosid = lagosid[["lagoslakei"]]
-    df = pd.concat([lagosid, df], axis=1)
-    # by merging, we only have lakes with insitu data
-    # To get ALL ids, just use lagosid csv
-
-    df = df[df["chl_a"] < 2000]
-
-    df = df.drop_duplicates(subset=["lagoslakei"])
-
-    df = df[["lagoslakei", "site"]]
 
     all_runs_needed = []
     for index, row in df.iterrows():
         lakeid = int(row["lagoslakei"])
-        name = row["site"]
+        name = row["GNIS_Name"]
+        if name == "":
+            name = (
+                f"Lake{lakeid}"  # In case lake name not found (doesn't really matter)
+            )
         formatted_name = name.lower().replace(" ", "-")
 
         date_range = list(
@@ -74,7 +65,6 @@ def run_all_lakes_all_dates(
     start_date_range,
     end_date_range,
     df_path,
-    lagosid_path,
     frequency: int,
 ):
     manager = multiprocessing.Manager()
@@ -87,7 +77,6 @@ def run_all_lakes_all_dates(
         start_date_range,
         end_date_range,
         tidy_df_path,
-        lagosid_path,
         frequency,
     )
 
@@ -169,8 +158,7 @@ if __name__ == "__main__":
     start_date_range = sys.argv[3]  # STR, in format YYYY-MM-DD
     end_date_range = sys.argv[4]  # STR, in format YYYY-MM-DD
     tidy_df_path = sys.argv[5]
-    lagosid_path = sys.argv[6]
-    frequency = int(sys.argv[7])
+    frequency = int(sys.argv[6])
 
     open_gee_project(project=project)
 
@@ -180,6 +168,5 @@ if __name__ == "__main__":
         start_date_range,
         end_date_range,
         tidy_df_path,
-        lagosid_path,
         frequency,
     )
