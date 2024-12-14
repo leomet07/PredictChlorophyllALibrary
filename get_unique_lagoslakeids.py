@@ -13,10 +13,12 @@ print(nys_lagosid)
 import geopandas as gp
 
 gp.GeoDataFrame()
-shp = gp.GeoDataFrame.from_file("LAGOS_NY_4ha_Polygons.shp")
+shp = gp.GeoDataFrame.from_file("LAGOS_NY_4ha_Polygons/LAGOS_NY_4ha_Polygons.shp")
 
-shp = shp[["lagoslakei"]]
-shp = shp.drop_duplicates()
+print(shp.head)
+
+shp = shp[["GNIS_Name", "lagoslakei"]]
+shp = shp.drop_duplicates(subset="lagoslakei")
 
 shp.to_csv("all_nys_lakes_lagoslakeids.csv", index=False)
 
