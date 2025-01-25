@@ -1002,6 +1002,8 @@ def visualize(tif_path: str):
         num_bands = src.count
         height = src.height
         width = src.width
+        tags = src.tags()
+        title = f"Date: {tags["date"]}, ID: {tags["id"]}, Scale: {tags["scale"]}\n"
 
         print(f"Number of bands: {num_bands}")
         # print(f"Dimensions: {width} x {height}")
@@ -1016,8 +1018,8 @@ def visualize(tif_path: str):
                 ax.imshow(img[i, :, :], cmap="gray")  # Display each band separately
                 ax.set_title(f"Band {i+1}")
                 ax.axis("off")
-
         plt.tight_layout()
+        plt.suptitle(title, fontsize=24) # Super title for all the subplots!
         plt.show()
 
 
