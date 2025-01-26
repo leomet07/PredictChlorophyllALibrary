@@ -14,6 +14,15 @@ import matplotlib.pyplot as plt
 ## GLOBAL CONSTANTS FOR THIS PROJECT
 CLOUD_FILTER = 50
 
+def see_if_all_image_bands_valid(band_values):
+    for band in band_values:
+        if band_values[band] != None:
+            return True
+    # if it made it all the way here, all values in this dict are None
+    return False
+
+
+
 """
 Set up GEE account and get the name of your GEE project.
 """
@@ -955,29 +964,14 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
 
     Rrs_S2B = Rrs_S2B.select(["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A"])
 
-    Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
-
     print("Number of S2A images:", Rrs_S2A.size().getInfo())
     print("Number of S2B images:", Rrs_S2B.size().getInfo())
 
-    finger_lakes = Rrs_S2_merged.first()
-    first_image_date_S2_merged = (
-        ee.Date(finger_lakes.get("system:time_start")).format("YYYY-MM-dd").getInfo()
-    )
+    Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
 
-    # add in s2b
+    return Rrs_S2_merged
 
-    # print(
-    #     "Date of the first image in FC_S2 (merged S2A and S2B):",
-    #     first_image_date_S2_merged,
-    # )
-
-    finger_lakes = finger_lakes.clip(LakeShp)
-
-    finger_lakes.getInfo()
-
-    test = finger_lakes.toFloat()
-    return test, first_image_date_S2_merged
+    
 
 
 """
@@ -986,14 +980,46 @@ ex. start_date = '2020-07-01'
     end_date = '2020-08-01'
 """
 
+def get_image_and_date_from_image_collection(coll, index, shp):
+    image = ee.Image(coll.toList(coll.size()).get(index))
+    date = (
+        ee.Date(image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
+    )
+    image = image.clip(shp)
+    image = image.toFloat()
+    return image, date
+
 
 def get_raster(start_date, end_date, LakeShp) -> ee.Image:
     date_range = ee.Filter.date(start_date, end_date)
     filter_range = ee.Filter.Or(date_range)
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
     # print("Masked Coll size: ", masked_coll.size().getInfo())  # if this is zero, nothing found
-    image, date = import_collections(masked_coll, filter_range, LakeShp)
-    return image, date
+    merged_s2_coll = import_collections(masked_coll, filter_range, LakeShp)
+
+
+    for i in range(0, merged_s2_coll.size().getInfo()):
+        image, date = get_image_and_date_from_image_collection(merged_s2_coll, i, LakeShp)
+
+        min_value = image.reduceRegion(
+            reducer=ee.Reducer.min(),
+            geometry=LakeShp.geometry(), # or your specific geometry
+            scale=scale,
+            maxPixels=1e9,
+            crs= "EPSG:4326"
+        ).getInfo()
+
+        # print(f"Is min valid ({i})? ", see_if_all_image_bands_valid(min_value))
+
+        if see_if_all_image_bands_valid(min_value):
+            if i != 0: # Proof of concept if rescues are even worth
+                print("IMAGE RESCUE HAS BEEN PERFORMED!!!!")
+                with open('rescuelog.txt', 'a') as file:
+                    file.write(f"Rescue performed: {start_date}")
+            return image, date
+    # if it made it here, all have blank images (due to NASA JPL aggressive cloud alterer/filter)
+    raise Exception("IMAGE IS ALL BLANK :(((")
+
 
 
 def inspect_raster(image):
@@ -1060,13 +1086,6 @@ def visualize(tif_path: str):
         plt.suptitle(title, fontsize=24) # Super title for all the subplots!
         plt.show()
 
-def see_if_all_image_bands_valid(band_values):
-    for band in band_values:
-        if band_values[band] != None:
-            return True
-    # if it made it all the way here, all values in this dict are None
-    return False
-
 def export_raster_main(
     out_dir: str,
     out_filename: str,
@@ -1084,30 +1103,6 @@ def export_raster_main(
 
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
-
-    # max_value = image.reduceRegion(
-    #     reducer=ee.Reducer.max(),
-    #     geometry=LakeShp.geometry(), # or your specific geometry
-    #     scale=scale,
-    #     maxPixels=1e9,
-    #     crs= "EPSG:4326"
-    # ).getInfo()
-    min_value = image.reduceRegion(
-        reducer=ee.Reducer.min(),
-        geometry=LakeShp.geometry(), # or your specific geometry
-        scale=scale,
-        maxPixels=1e9,
-        crs= "EPSG:4326"
-    ).getInfo()
-
-
-    # print(f"Max value: {max_value}")
-    # print(f"Min value: {min_value}")
-    # print("Is max valid? ", see_if_all_image_bands_valid(max_value))
-    print("Is min valid? ", see_if_all_image_bands_valid(min_value))
-    
-    if not see_if_all_image_bands_valid(min_value):
-        raise Exception("IMAGE IS ALL BLANK :(((")
 
     # print("Getting download url...")
     # get download URL
