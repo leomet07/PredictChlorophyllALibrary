@@ -896,22 +896,22 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
     JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     # Process
     mask = JRC.select("occurrence").gt(0)
-    dump_m = masked_coll.filter(filter_range).filterBounds(LakeShp).first()
+    # dump_m = masked_coll.filter(filter_range).filterBounds(LakeShp).first()
 
-    dump_m = dump_m.clip(LakeShp)
+    # dump_m = dump_m.clip(LakeShp)
 
 
-    url_m = dump_m.getDownloadURL(
-        {
-            "format": "GEO_TIFF",
-            "scale": 30,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
-            "region": LakeShp.geometry(),
-            "filePerBand": False,
-            "crs": "EPSG:4326",
-        }
-    )
-    print("URL of masked_coll_first in debug: ", url_m)
-    print("Cloudy pixel percentage of dump_m: ", dump_m.get("CLOUDY_PIXEL_PERCENTAGE").getInfo())
+    # url_m = dump_m.getDownloadURL(
+    #     {
+    #         "format": "GEO_TIFF",
+    #         "scale": 30,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
+    #         "region": LakeShp.geometry(),
+    #         "filePerBand": False,
+    #         "crs": "EPSG:4326",
+    #     }
+    # )
+    # print("URL of masked_coll_first in debug: ", url_m)
+    # print("Cloudy pixel percentage of dump_m: ", dump_m.get("CLOUDY_PIXEL_PERCENTAGE").getInfo())
 
 
     FC_S2A = (
@@ -934,25 +934,6 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
         .sort("system:time_start")
     )
 
-    print("FC_S2A: ", FC_S2A.size().getInfo())
-    dump = FC_S2A.first()
-
-    # print("CLOUDY PIXEL PERCENTAGE: ", dump.get("CLOUDY_PIXEL_PERCENTAGE"))
-    dump = dump.clip(LakeShp)
-
-
-    url = dump.getDownloadURL(
-        {
-            "format": "GEO_TIFF",
-            "scale": 30,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
-            "region": LakeShp.geometry(),
-            "filePerBand": False,
-            "crs": "EPSG:4326",
-        }
-    )
-    print("URL of FC_S2A in debug: ", url)
-
-    print("FC_S2B: ", FC_S2B.size().getInfo())
 
     # filter S2A by the filtered buffer and apply atm corr
     Rrs_S2A = FC_S2A.map(MAIN_S2A).sort("system:time_start")
@@ -964,8 +945,8 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
 
     Rrs_S2B = Rrs_S2B.select(["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A"])
 
-    print("Number of S2A images:", Rrs_S2A.size().getInfo())
-    print("Number of S2B images:", Rrs_S2B.size().getInfo())
+    # print("Number of S2A images:", Rrs_S2A.size().getInfo())
+    # print("Number of S2B images:", Rrs_S2B.size().getInfo())
 
     Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
 
@@ -1016,6 +997,7 @@ def get_raster(start_date, end_date, LakeShp) -> ee.Image:
                 print("IMAGE RESCUE HAS BEEN PERFORMED!!!!")
                 with open('rescuelog.txt', 'a') as file:
                     file.write(f"Rescue performed: {start_date}")
+            print("NOT ALL BLANK :))))")
             return image, date
     # if it made it here, all have blank images (due to NASA JPL aggressive cloud alterer/filter)
     raise Exception("IMAGE IS ALL BLANK :(((")
