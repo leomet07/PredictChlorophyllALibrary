@@ -6,6 +6,12 @@ import multiprocessing
 import ee
 import tqdm
 
+
+import random
+
+
+
+
 # Make tuples of function params
 
 
@@ -80,6 +86,8 @@ def run_all_lakes_all_dates(
         frequency,
     )
 
+    random.shuffle(all_params_to_pass_in)
+
     for arr in all_params_to_pass_in:
         arr.append(
             scale_cache
@@ -148,6 +156,10 @@ def export_raster_main_nice_scale(
                 # TypeError: 'out_all/black-lake.tif' not recognized as a supported file format.
 
                 scale += 10
+            elif str(error).startswith("IMAGE IS ALL BLANK"):
+                # Image is all blank! go to next date
+                print("Image is all blank :(")
+                break
             else:
                 raise error
 
