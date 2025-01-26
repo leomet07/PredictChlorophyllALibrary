@@ -887,6 +887,23 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
     JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     # Process
     mask = JRC.select("occurrence").gt(0)
+    dump_m = masked_coll.filter(filter_range).filterBounds(LakeShp).first()
+
+    dump_m = dump_m.clip(LakeShp)
+
+
+    url_m = dump_m.getDownloadURL(
+        {
+            "format": "GEO_TIFF",
+            "scale": 30,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
+            "region": LakeShp.geometry(),
+            "filePerBand": False,
+            "crs": "EPSG:4326",
+        }
+    )
+    print("URL of masked_coll_first in debug: ", url_m)
+    print("Cloudy pixel percentage of dump_m: ", dump_m.get("CLOUDY_PIXEL_PERCENTAGE").getInfo())
+
 
     FC_S2A = (
         masked_coll.filter(filter_range)
@@ -908,6 +925,26 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
         .sort("system:time_start")
     )
 
+    print("FC_S2A: ", FC_S2A.size().getInfo())
+    dump = FC_S2A.first()
+
+    # print("CLOUDY PIXEL PERCENTAGE: ", dump.get("CLOUDY_PIXEL_PERCENTAGE"))
+    dump = dump.clip(LakeShp)
+
+
+    url = dump.getDownloadURL(
+        {
+            "format": "GEO_TIFF",
+            "scale": 30,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
+            "region": LakeShp.geometry(),
+            "filePerBand": False,
+            "crs": "EPSG:4326",
+        }
+    )
+    print("URL of FC_S2A in debug: ", url)
+
+    print("FC_S2B: ", FC_S2B.size().getInfo())
+
     # filter S2A by the filtered buffer and apply atm corr
     Rrs_S2A = FC_S2A.map(MAIN_S2A).sort("system:time_start")
 
@@ -920,8 +957,8 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
 
     Rrs_S2_merged = Rrs_S2A.merge(Rrs_S2B)
 
-    # print("Number of S2A images:", Rrs_S2A.size().getInfo())
-    # print("Number of S2B images:", Rrs_S2B.size().getInfo())
+    print("Number of S2A images:", Rrs_S2A.size().getInfo())
+    print("Number of S2B images:", Rrs_S2B.size().getInfo())
 
     finger_lakes = Rrs_S2_merged.first()
     first_image_date_S2_merged = (
@@ -1018,10 +1055,17 @@ def visualize(tif_path: str):
                 ax.imshow(img[i, :, :], cmap="gray")  # Display each band separately
                 ax.set_title(f"Band {i+1}")
                 ax.axis("off")
+                # print(img[i, :, :])
         plt.tight_layout()
         plt.suptitle(title, fontsize=24) # Super title for all the subplots!
         plt.show()
 
+def see_if_all_image_bands_valid(band_values):
+    for band in band_values:
+        if band_values[band] != None:
+            return True
+    # if it made it all the way here, all values in this dict are None
+    return False
 
 def export_raster_main(
     out_dir: str,
@@ -1040,6 +1084,30 @@ def export_raster_main(
 
     # get raster of lake, inspect to make sure you have 9 bands
     image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
+
+    # max_value = image.reduceRegion(
+    #     reducer=ee.Reducer.max(),
+    #     geometry=LakeShp.geometry(), # or your specific geometry
+    #     scale=scale,
+    #     maxPixels=1e9,
+    #     crs= "EPSG:4326"
+    # ).getInfo()
+    min_value = image.reduceRegion(
+        reducer=ee.Reducer.min(),
+        geometry=LakeShp.geometry(), # or your specific geometry
+        scale=scale,
+        maxPixels=1e9,
+        crs= "EPSG:4326"
+    ).getInfo()
+
+
+    # print(f"Max value: {max_value}")
+    # print(f"Min value: {min_value}")
+    # print("Is max valid? ", see_if_all_image_bands_valid(max_value))
+    print("Is min valid? ", see_if_all_image_bands_valid(min_value))
+    
+    if not see_if_all_image_bands_valid(min_value):
+        raise Exception("IMAGE IS ALL BLANK :(((")
 
     # print("Getting download url...")
     # get download URL
