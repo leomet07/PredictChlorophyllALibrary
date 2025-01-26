@@ -25,5 +25,7 @@ with rasterio.open(out_file) as src:
             ax.set_title(f"Band {i+1}")
             ax.axis("off")
 
+            print(img[i, :, :])
+
     plt.tight_layout()
     plt.show()
