@@ -971,15 +971,19 @@ def get_image_and_date_from_image_collection(coll, index, shp):
     return image, date
 
 
-def get_raster(start_date, end_date, LakeShp) -> ee.Image:
+def get_raster(start_date, end_date, LakeShp, scale) -> ee.Image:
     date_range = ee.Filter.date(start_date, end_date)
     filter_range = ee.Filter.Or(date_range)
     masked_coll = get_masked_coll(LakeShp, start_date=start_date, end_date=end_date)
     # print("Masked Coll size: ", masked_coll.size().getInfo())  # if this is zero, nothing found
     merged_s2_coll = import_collections(masked_coll, filter_range, LakeShp)
 
+    merged_s2_coll_len = merged_s2_coll.size().getInfo()
+    
+    if merged_s2_coll_len == 0:
+        raise Exception("NO IMAGES FOUND")
 
-    for i in range(0, merged_s2_coll.size().getInfo()):
+    for i in range(0, merged_s2_coll_len):
         image, date = get_image_and_date_from_image_collection(merged_s2_coll, i, LakeShp)
 
         min_value = image.reduceRegion(
@@ -990,14 +994,7 @@ def get_raster(start_date, end_date, LakeShp) -> ee.Image:
             crs= "EPSG:4326"
         ).getInfo()
 
-        # print(f"Is min valid ({i})? ", see_if_all_image_bands_valid(min_value))
-
         if see_if_all_image_bands_valid(min_value):
-            if i != 0: # Proof of concept if rescues are even worth
-                print("IMAGE RESCUE HAS BEEN PERFORMED!!!!")
-                with open('rescuelog.txt', 'a') as file:
-                    file.write(f"Rescue performed: {start_date}")
-            print("NOT ALL BLANK :))))")
             return image, date
     # if it made it here, all have blank images (due to NASA JPL aggressive cloud alterer/filter)
     raise Exception("IMAGE IS ALL BLANK :(((")
@@ -1084,7 +1081,7 @@ def export_raster_main(
     # print("Lakeshp fetched")
 
     # get raster of lake, inspect to make sure you have 9 bands
-    image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp)
+    image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp, scale=scale)
 
     # print("Getting download url...")
     # get download URL

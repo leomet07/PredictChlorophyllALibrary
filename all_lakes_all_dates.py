@@ -158,9 +158,12 @@ def export_raster_main_nice_scale(
                 scale += 10
             elif str(error).startswith("IMAGE IS ALL BLANK"):
                 # Image is all blank! go to next date
-                print("Image is all blank :(")
+                break
+            elif str(error).startswith("NO IMAGES FOUND"):
+                # print("No images found (lenny)")
                 break
             else:
+                print("some exception occurred: ", str(error))
                 raise error
 
 
