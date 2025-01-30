@@ -5,15 +5,18 @@ from tqdm import tqdm
 from pprint import pprint
 
 def is_list_valid(filepath: str):
-    with rasterio.open(filepath) as src:
-        # Read the entire image into a numpy array (bands, height, width)
-        img = src.read()
+    try:
+        with rasterio.open(filepath) as src:
+            # Read the entire image into a numpy array (bands, height, width)
+            img = src.read()
 
-        flattened_img = img.flatten()
+            flattened_img = img.flatten()
 
-        if np.all(flattened_img == np.float32("-inf")):
-            return False
-        return True
+            if np.all(flattened_img == np.float32("-inf")):
+                return False
+            return True
+    except rasterio.errors.RasterioIOError as e: # Weird file early term error
+        return False
     
     return invalid_paths
 
