@@ -10,6 +10,8 @@ def inspect(filepath: str):
         height = src.height
         width = src.width
         print(src.profile)
+        print(src.tags())
+
 
         print(f"Number of bands: {num_bands}")
         print(f"Dimensions: {width} x {height}")
