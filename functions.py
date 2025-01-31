@@ -1107,7 +1107,7 @@ def export_raster_main(
     with open(out_filepath, "wb") as f:
         f.write(response.content)
 
-    new_metadata = {"date": date, "id": lakeid, "scale": scale}
+    new_metadata = {"date": date, "id": lakeid, "scale": scale, "satellite" : "sentinel-2"}
     with rasterio.open(out_filepath, "r+") as dst:
         dst.update_tags(**new_metadata)
 

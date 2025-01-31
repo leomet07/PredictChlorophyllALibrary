@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import rasterio
+import math
 
 out_file = input("Enter the path of a tif to inspect: ") or "out/prospect.tif"
 
@@ -18,8 +19,10 @@ def inspect(filepath: str):
 
         # Read the entire image into a numpy array (bands, height, width)
         img = src.read()
+
+        number_of_bands = img.shape[0]
         # Display each band separately
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
+        fig, axes = plt.subplots(nrows=3, ncols=math.ceil(float(number_of_bands) / 3), figsize=(15, 10))
 
         for i, ax in enumerate(axes.flatten()):
             if i < num_bands:
