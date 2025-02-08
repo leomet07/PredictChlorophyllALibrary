@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import rasterio
 import math
+import numpy as np
 
 out_file = input("Enter the path of a tif to inspect: ") or "out/prospect.tif"
 
@@ -21,6 +22,12 @@ def inspect(filepath: str):
         img = src.read()
 
         number_of_bands = img.shape[0]
+
+        if number_of_bands == 1:
+            print("band data: ")
+            with np.printoptions(threshold=np.inf):
+                print(img[0])
+            print(filepath)
         # Display each band separately
         fig, axes = plt.subplots(nrows=3, ncols=math.ceil(float(number_of_bands) / 3), figsize=(15, 10))
 
@@ -32,6 +39,7 @@ def inspect(filepath: str):
 
         plt.tight_layout()
         plt.show()
+
 
 if __name__ == "__main__":
     inspect(out_file)                
