@@ -326,8 +326,11 @@ def roadMask(image):
 
 """Create filters to select summer dates"""
 
-sum23 = ee.Filter.date('2023-07-01','2023-09-30')
-Summers = ee.Filter.Or(sum23)
+START_DATE = '2023-07-01'
+END_DATE = '2023-07-14'
+
+date_filter = ee.Filter.date(START_DATE,END_DATE)
+Summers = ee.Filter.Or(date_filter)
 
 """## Buffer function for points"""
 
@@ -392,7 +395,7 @@ finger_lakes = finger_lakes.clip(LakeShp)
 
 image = finger_lakes.toFloat()
 
-scale = 20
+scale = 25
 
 url = image.getDownloadURL(
     {
@@ -406,7 +409,7 @@ url = image.getDownloadURL(
 
 out_dir = "landsat_test"
 
-out_filename = "landsat_test_chautauqua.tif"
+out_filename = "landsat_test_chautauqua_2023_07_01-2023-07-14.tif"
 
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
@@ -421,5 +424,11 @@ with open(out_filepath, "wb") as f:
     f.write(response.content)
 
 new_metadata = {"date": date, "id": lakeid, "scale": scale, "satellite" : "landsat"}
+print(new_metadata)
 with rasterio.open(out_filepath, "r+") as dst:
     dst.update_tags(**new_metadata)
+    
+
+from functions import visualize
+
+visualize(out_filepath)
