@@ -23,6 +23,7 @@ import sys
 import datetime
 from pprint import pprint
 import matplotlib.pyplot as plt
+from functions import visualize
 
 
 
@@ -52,8 +53,8 @@ open_gee_project(projectName)
 
 ## shapefile (STORETID) table as csv
 # uploaded = files.upload()
-import pandas as pd
-import io
+
+
 
 lakeid = 81353
 LakeShp = ee.FeatureCollection(
@@ -326,8 +327,8 @@ def roadMask(image):
 
 """Create filters to select summer dates"""
 
-START_DATE = '2023-07-01'
-END_DATE = '2023-07-14'
+START_DATE = '2019-03-01'
+END_DATE = '2019-04-30'
 
 date_filter = ee.Filter.date(START_DATE,END_DATE)
 Summers = ee.Filter.Or(date_filter)
@@ -409,26 +410,50 @@ url = image.getDownloadURL(
 
 out_dir = "landsat_test"
 
-out_filename = "landsat_test_chautauqua_2023_07_01-2023-07-14.tif"
+out_filename =  "lake_chautauqua_landsat_" + START_DATE + "to" + END_DATE + ".tif"
 
-if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
 
-# export!
-out_filepath = os.path.join(out_dir, out_filename)
-# download image, and then view metadata with rasterio
-# print("Downloading raster...")
+def export_raster_main(
+    out_dir: str,
+    out_filename: str,
+    project: str,
+    lakeid: int,
+    start_date: str,
+    end_date: str,
+    scale: int,
+    shouldVisualize: bool = False,
+):
+    url = image.getDownloadURL(
+        {
+            "format": "GEO_TIFF",
+            "scale": scale,  #  increasing this makes predictions more blocky but reduces request size (smaller means more resolution tho!)
+            "region": LakeShp.geometry(),
+            "filePerBand": False,
+            "crs": "EPSG:4326",
+        }
+    )
 
-response = requests.get(url)
-with open(out_filepath, "wb") as f:
-    f.write(response.content)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
-new_metadata = {"date": date, "id": lakeid, "scale": scale, "satellite" : "landsat"}
-print(new_metadata)
-with rasterio.open(out_filepath, "r+") as dst:
-    dst.update_tags(**new_metadata)
-    
+    # export!
+    out_filepath = os.path.join(out_dir, out_filename)
+    # download image, and then view metadata with rasterio
+    # print("Downloading raster...")
 
-from functions import visualize
+    response = requests.get(url)
+    with open(out_filepath, "wb") as f:
+        f.write(response.content)
 
-visualize(out_filepath)
+    new_metadata = {"date": date, "id": lakeid, "scale": scale, "satellite" : "sentinel-2"}
+    with rasterio.open(out_filepath, "r+") as dst:
+        dst.update_tags(**new_metadata)
+
+    # print(f"Image saved to {out_filepath}")
+
+    if shouldVisualize:
+        print("Saved image metadata: ", new_metadata)
+        visualize(out_filepath)
+
+if __name__ == "__main__":
+    export_raster_main(out_dir,out_filename, projectName,lakeid, START_DATE, END_DATE, scale, True)
