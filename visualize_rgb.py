@@ -18,6 +18,8 @@ with rasterio.open(out_file) as src:
     # Read the entire image into a numpy array (bands, height, width)
     img = src.read()
 
+# Replace img nans with zero
+img[~np.isfinite(img)] = 0
 
 red_band = img[2, :, :] # B4
 green_band = img[1, :, :] # B3
