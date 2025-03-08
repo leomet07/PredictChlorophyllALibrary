@@ -19,7 +19,7 @@ def inspect(filepath: str):
         # Read the entire image into a numpy array (bands, height, width)
         img = src.read()
         # Display each band separately
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
+        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(15, 10))
 
         for i, ax in enumerate(axes.flatten()):
             if i < num_bands:
