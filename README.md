@@ -14,4 +14,4 @@ python multiple_dates.py out <your-google-earth-engine-project-name> 16364 "2019
 
 This downloads ``out_mult_high_rescongers2019-06-11to2019-06-16.tif`` and then ``out_mult_high_res/congers2019-06-21to2019-06-26.tif`` etc.. all the way up to  ``out_mult_high_res/congers2019-08-25to2019-08-30.tif``
 
-We used an interval of 5 because sentinel 2a and 2b have a visit frequency of every 10 days each, offset by 5 days, so there is a visit by a sentinel 2 satellite every 5 days
+We used an interval of 5 because sentinel 2a and 2b have a visit frequency of every 10 days each, offset by 5 days, so there is a visit by a sentinel 2 satellite every 5 days.
