@@ -76,13 +76,10 @@ https://github.com/Nateme16/geo-aquawatch-water-quality/blob/main/Atmospheric%20
 
 
 def atm_corr(img):
-    JRC = ee.Image("JRC/GSW1_3/GlobalSurfaceWater")
-    mask = JRC.select("occurrence").gt(50)
     target_image_number = 1
-
     ozone = ee.ImageCollection("TOMS/MERGED")
     pi = ee.Image(3.141592)
-    JRC = ee.Image("JRC/GSW1_1/GlobalSurfaceWater")
+    JRC = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     mask = JRC.select("occurrence").gt(0)
 
     footprint = img.geometry()
@@ -444,7 +441,7 @@ def maskL8sr(image):
 
 # jrc water occurrence mask
 def jrcMask(image):
-    jrc = ee.Image("JRC/GSW1_0/GlobalSurfaceWater")
+    jrc = ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
     # select only water occurence
     occurrence = jrc.select("occurrence")
     # selectonly water occurences of greater than 75%
