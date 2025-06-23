@@ -1,3 +1,5 @@
+## This repository is archived. The latest version can be found under ``satellite_fetch/`` in [leomet07/ny-satellite-chla-model](https://github.com/leomet07/ny-satellite-chla-model)
+
 # Predict Chlorophyll-A Library
 
 **Example to download the first image without cloud cover in an interval with a resolution of 30mby30m per pixel:**
