@@ -18,3 +18,7 @@ out/
 *.csv
 
 .env
+
+
+.vscode/
+

@@ -14,13 +14,13 @@ import matplotlib.pyplot as plt
 ## GLOBAL CONSTANTS FOR THIS PROJECT
 CLOUD_FILTER = 50
 
+
 def see_if_all_image_bands_valid(band_values):
     for band in band_values:
         if band_values[band] != None:
             return True
     # if it made it all the way here, all values in this dict are None
     return False
-
 
 
 """
@@ -900,7 +900,6 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
 
     # dump_m = dump_m.clip(LakeShp)
 
-
     # url_m = dump_m.getDownloadURL(
     #     {
     #         "format": "GEO_TIFF",
@@ -912,7 +911,6 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
     # )
     # print("URL of masked_coll_first in debug: ", url_m)
     # print("Cloudy pixel percentage of dump_m: ", dump_m.get("CLOUDY_PIXEL_PERCENTAGE").getInfo())
-
 
     FC_S2A = (
         masked_coll.filter(filter_range)
@@ -934,7 +932,6 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
         .sort("system:time_start")
     )
 
-
     # filter S2A by the filtered buffer and apply atm corr
     Rrs_S2A = FC_S2A.map(MAIN_S2A).sort("system:time_start")
 
@@ -952,8 +949,6 @@ def import_collections(masked_coll, filter_range, LakeShp) -> ee.Image:
 
     return Rrs_S2_merged
 
-    
-
 
 """
 Get Raster Image
@@ -961,11 +956,10 @@ ex. start_date = '2020-07-01'
     end_date = '2020-08-01'
 """
 
+
 def get_image_and_date_from_image_collection(coll, index, shp):
     image = ee.Image(coll.toList(coll.size()).get(index))
-    date = (
-        ee.Date(image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
-    )
+    date = ee.Date(image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
     image = image.clip(shp)
     image = image.toFloat()
     return image, date
@@ -979,26 +973,27 @@ def get_raster(start_date, end_date, LakeShp, scale) -> ee.Image:
     merged_s2_coll = import_collections(masked_coll, filter_range, LakeShp)
 
     merged_s2_coll_len = merged_s2_coll.size().getInfo()
-    
+
     if merged_s2_coll_len == 0:
         raise Exception("NO IMAGES FOUND")
 
     for i in range(0, merged_s2_coll_len):
-        image, date = get_image_and_date_from_image_collection(merged_s2_coll, i, LakeShp)
+        image, date = get_image_and_date_from_image_collection(
+            merged_s2_coll, i, LakeShp
+        )
 
         min_value = image.reduceRegion(
             reducer=ee.Reducer.min(),
-            geometry=LakeShp.geometry(), # or your specific geometry
+            geometry=LakeShp.geometry(),  # or your specific geometry
             scale=scale,
             maxPixels=1e9,
-            crs= "EPSG:4326"
+            crs="EPSG:4326",
         ).getInfo()
 
         if see_if_all_image_bands_valid(min_value):
             return image, date
     # if it made it here, all have blank images (due to NASA JPL aggressive cloud alterer/filter)
     raise Exception("IMAGE IS ALL BLANK :(((")
-
 
 
 def inspect_raster(image):
@@ -1053,7 +1048,7 @@ def visualize(tif_path: str):
         # Read the entire image into a numpy array (bands, height, width)
         img = src.read()
         # Display each band separately
-        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 10))
+        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(15, 10))
 
         for i, ax in enumerate(axes.flatten()):
             if i < num_bands:
@@ -1062,8 +1057,9 @@ def visualize(tif_path: str):
                 ax.axis("off")
                 # print(img[i, :, :])
         plt.tight_layout()
-        plt.suptitle(title, fontsize=24) # Super title for all the subplots!
+        plt.suptitle(title, fontsize=24)  # Super title for all the subplots!
         plt.show()
+
 
 def export_raster_main(
     out_dir: str,
@@ -1081,7 +1077,9 @@ def export_raster_main(
     # print("Lakeshp fetched")
 
     # get raster of lake, inspect to make sure you have 9 bands
-    image, date = get_raster(start_date=start_date, end_date=end_date, LakeShp=LakeShp, scale=scale)
+    image, date = get_raster(
+        start_date=start_date, end_date=end_date, LakeShp=LakeShp, scale=scale
+    )
 
     # print("Getting download url...")
     # get download URL
@@ -1107,7 +1105,12 @@ def export_raster_main(
     with open(out_filepath, "wb") as f:
         f.write(response.content)
 
-    new_metadata = {"date": date, "id": lakeid, "scale": scale}
+    new_metadata = {
+        "date": date,
+        "id": lakeid,
+        "scale": scale,
+        "satellite": "sentinel-2",
+    }
     with rasterio.open(out_filepath, "r+") as dst:
         dst.update_tags(**new_metadata)
 
